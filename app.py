@@ -1,4 +1,4 @@
-from __future__ import annotations
+from _future_ import annotations
 
 from datetime import date
 
@@ -17,6 +17,13 @@ from neo4j_service import (
     search_books,
     seed_demo_data,
 )
+from ui_avatar import (
+    find_profile_photo,
+    profile_avatar_html,
+    save_profile_photo,
+)
+
+OWNER_NAME = "Nasak"  # ชื่อที่โชว์ใต้รูปผู้ดูแลระบบใน sidebar
 
 st.set_page_config(
     page_title="GraphBook Recommender",
@@ -97,13 +104,16 @@ require_connection()
 with st.sidebar:
     st.markdown("## 📚 GraphBook")
     st.caption("Neo4j Aura + Streamlit")
+    st.markdown(profile_avatar_html(OWNER_NAME, size=104), unsafe_allow_html=True)
+    st.caption(f"{OWNER_NAME} · ผู้ดูแลระบบ" + ("" if find_profile_photo() else " (ยังไม่ตั้งรูป)"))
     page = st.radio(
         "เมนู",
         ["Dashboard", "Recommendations", "Book Search", "Borrow / Rate", "Graph Explorer", "Admin / Setup"],
     )
     st.divider()
     st.caption("Bachelor-level Graph Database Project")
-
+    
+st.image('img/bank159.jpg')  # เปลี่ยนเป็น .png ถ้าไฟล์จริงเป็น PNG
 st.markdown(
     """
     <div class="hero">
@@ -113,8 +123,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-st.image('img/bank159')
-
 
 if page == "Dashboard":
     st.subheader("ภาพรวมระบบ")
@@ -133,10 +141,10 @@ if page == "Dashboard":
         left, right = st.columns([1, 2])
         with left:
             st.markdown(f"### {profile['name']}")
-            st.write(f"**รหัส:** {profile['student_id']}")
-            st.write(f"**สาขา:** {profile['major']}")
-            st.write(f"**ชั้นปี:** {profile['year']}")
-            st.write("**ความสนใจ:** " + (", ".join(profile["interests"]) or "ยังไม่มี"))
+            st.write(f"*รหัส:* {profile['student_id']}")
+            st.write(f"*สาขา:* {profile['major']}")
+            st.write(f"*ชั้นปี:* {profile['year']}")
+            st.write("*ความสนใจ:* " + (", ".join(profile["interests"]) or "ยังไม่มี"))
         with right:
             st.markdown("### ประวัติการยืม")
             if profile["borrowed"]:
@@ -223,12 +231,12 @@ elif page == "Admin / Setup":
     st.warning("ปุ่มนี้ไม่ลบข้อมูลเดิม และใช้ MERGE จึงสามารถกดซ้ำได้")
     st.markdown(
         """
-        **Graph schema**
-        - `(:Student)-[:FRIEND_OF]-(:Student)`
-        - `(:Student)-[:BORROWED {borrow_date, rating}]->(:Book)`
-        - `(:Student)-[:INTERESTED_IN]->(:Category)`
-        - `(:Book)-[:IN_CATEGORY]->(:Category)`
-        - `(:Author)-[:WROTE]->(:Book)`
+        *Graph schema*
+        - (:Student)-[:FRIEND_OF]-(:Student)
+        - (:Student)-[:BORROWED {borrow_date, rating}]->(:Book)
+        - (:Student)-[:INTERESTED_IN]->(:Category)
+        - (:Book)-[:IN_CATEGORY]->(:Category)
+        - (:Author)-[:WROTE]->(:Book)
         """
     )
     if st.button("สร้าง Constraint + Demo Data", type="primary", use_container_width=True):
@@ -236,3 +244,38 @@ elif page == "Admin / Setup":
             seed_demo_data()
         st.success("สร้างข้อมูลตัวอย่างเรียบร้อยแล้ว")
         st.rerun()
+
+    st.divider()
+    st.subheader("🖼️ รูปประจำตัวผู้ดูแลระบบ")
+    st.caption("ตั้งไว้ครั้งเดียว ใช้โชว์ที่ sidebar ทุกหน้า (ไม่ผูกกับนักศึกษาในฐานข้อมูล)")
+
+    current_photo = find_profile_photo()
+    photo_col, info_col = st.columns([1, 3])
+    with photo_col:
+        st.markdown(profile_avatar_html(OWNER_NAME, size=120), unsafe_allow_html=True)
+    with info_col:
+        if current_photo:
+            st.write(f"ใช้ไฟล์: assets/{current_photo.name}")
+        else:
+            st.info("ยังไม่มีรูป — อัปโหลดด้านล่าง หรือวางไฟล์ที่ assets/profile.jpg")
+
+        upload = st.file_uploader(
+            "เลือกรูป (png / jpg / jpeg / webp, ไม่เกิน 8 MB)",
+            type=["png", "jpg", "jpeg", "webp"],
+        )
+        if upload is not None:
+            st.image(upload, caption=f"ตัวอย่าง: {upload.name}", width=180)
+            if st.button("บันทึกรูปนี้", type="primary"):
+                try:
+                    saved = save_profile_photo(upload.getvalue(), upload.name)
+                except ValueError as exc:
+                    st.error(str(exc))
+                else:
+                    st.success(f"บันทึกแล้ว → assets/{saved.name}")
+                    st.rerun()
+
+        if current_photo:
+            st.caption(
+                "ต้องการลบรูป: ลบไฟล์ assets/profile.* แล้ว rerun — "
+                "บน Streamlit Cloud รูปที่อัปโหลดจะหายเมื่อแอป restart ถ้าอยากถาวรให้ commit ไฟล์ขึ้น git"
+            )
