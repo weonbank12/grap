@@ -113,6 +113,8 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+st.image('img/bank159')
+
 
 if page == "Dashboard":
     st.subheader("ภาพรวมระบบ")
