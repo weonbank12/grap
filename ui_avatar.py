@@ -12,7 +12,7 @@
 โมดูลนี้ใช้แค่ standard library (ไม่ import streamlit) จึงเทสได้โดยไม่ต้องรันแอป
 """
 
-from _future_ import annotations
+from __future__ import annotations
 
 import base64
 import html
