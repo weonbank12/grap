@@ -113,7 +113,6 @@ with st.sidebar:
     st.divider()
     st.caption("Bachelor-level Graph Database Project")
     
-st.image('img/bank159.jpg')  # เปลี่ยนเป็น .png ถ้าไฟล์จริงเป็น PNG
 st.markdown(
     """
     <div class="hero">
